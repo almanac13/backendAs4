@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Time-Series Analytics</title>
+
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Time-Series Analytics</h1>
+
+    <div class="controls">
+      <label>
+        Field:
+        <select id="field">
+          <option value="field1">field1</option>
+          <option value="field2">field2</option>
+          <option value="field3">field3</option>
+        </select>
+      </label>
+
+      <label>
+        Start date:
+        <input type="date" id="start_date">
+      </label>
+
+      <label>
+        End date:
+        <input type="date" id="end_date">
+      </label>
+
+      <label>
+        Chart type:
+        <select id="chartType">
+          <option value="line">Line</option>
+          <option value="bar">Bar</option>
+        </select>
+      </label>
+
+      <!-- IMPORTANT: this button was missing -->
+      <button id="loadBtn" type="button">Load</button>
+    </div>
+
+    <div class="panel">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="panel" id="metrics">
+      <h2>Metrics</h2>
+      <div id="metricsContent">Click “Load” to show chart and metrics.</div>
+    </div>
+
+    <div class="error" id="errorBox"></div>
+  </div>
+
+  <script src="/chart.js"></script>
+</body>
+</html>
