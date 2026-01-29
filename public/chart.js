@@ -4,10 +4,23 @@ function showError(msg) {
   document.getElementById("errorBox").textContent = msg || "";
 }
 
+function clearUI(message = "No data.") {
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = null;
+
+  document.getElementById("metricsContent").innerHTML = message;
+}
+
 function buildQuery(field, start, end) {
-  let q = `field=${encodeURIComponent(field)}`;
-  if (start && end) q += `&start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
-  return q;
+  const params = new URLSearchParams();
+  params.set("field", field);
+  if (start && end) {
+    params.set("start_date", start);
+    params.set("end_date", end);
+  }
+  params.set("page", "1");
+  params.set("limit", "500");
+  return params.toString();
 }
 
 async function loadAll() {
@@ -19,27 +32,30 @@ async function loadAll() {
     const end = document.getElementById("end_date").value;
     const chartType = document.getElementById("chartType").value;
 
-    // validation: both dates or none
     if ((start && !end) || (!start && end)) {
       showError("Select BOTH start date and end date (or leave both empty).");
+      clearUI("Metrics cleared.");
       return;
     }
 
     const q = buildQuery(field, start, end);
 
-    // 1) fetch data
+    // fetch data
     const res = await fetch(`/api/measurements?${q}`);
-    const data = await res.json();
+    const payload = await res.json();
 
     if (!res.ok) {
-      showError(data.error || "Failed to load data");
+      showError(payload.error || "Failed to load data");
+      clearUI("No metrics.");
       return;
     }
 
-    const labels = data.map(d => new Date(d.timestamp).toLocaleDateString());
-    const values = data.map(d => d[field]);
+    const rows = payload.data; 
 
-    // 2) draw chart
+    const labels = rows.map(d => new Date(d.timestamp).toLocaleDateString());
+    const values = rows.map(d => d[field]);
+
+    // draw chart
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(document.getElementById("chart"), {
@@ -58,12 +74,13 @@ async function loadAll() {
       }
     });
 
-    // 3) fetch metrics
+    // fetch metrics
     const mres = await fetch(`/api/measurements/metrics?${q}`);
     const metrics = await mres.json();
 
     if (!mres.ok) {
       showError(metrics.error || "Failed to load metrics");
+      document.getElementById("metricsContent").innerHTML = "No metrics.";
       return;
     }
 
@@ -76,9 +93,9 @@ async function loadAll() {
     `;
   } catch (e) {
     showError("Unexpected error. Check console + server terminal.");
+    clearUI("No metrics.");
     console.error(e);
   }
 }
 
-// IMPORTANT: button click triggers load
 document.getElementById("loadBtn").addEventListener("click", loadAll);

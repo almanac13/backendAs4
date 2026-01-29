@@ -52,6 +52,10 @@ button {
   background: #fafafa;
 }
 
+.chartPanel {
+  height: 320px;
+}
+
 #errorBox {
   margin-top: 12px;
   color: #b00020;
