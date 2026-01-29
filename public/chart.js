@@ -1,5 +1,12 @@
 let chartInstance = null;
 
+// ✅ Field meaning mapping (what each field represents)
+const fieldMeta = {
+  field1: { label: "Temperature", unit: "°C" },
+  field2: { label: "Humidity", unit: "%" },
+  field3: { label: "Website Traffic", unit: "visits" }
+};
+
 function showError(msg) {
   document.getElementById("errorBox").textContent = msg || "";
 }
@@ -32,6 +39,9 @@ async function loadAll() {
     const end = document.getElementById("end_date").value;
     const chartType = document.getElementById("chartType").value;
 
+    const meta = fieldMeta[field] || { label: field, unit: "" };
+
+    // validation: both dates or none
     if ((start && !end) || (!start && end)) {
       showError("Select BOTH start date and end date (or leave both empty).");
       clearUI("Metrics cleared.");
@@ -40,7 +50,7 @@ async function loadAll() {
 
     const q = buildQuery(field, start, end);
 
-    // fetch data
+    // 1) fetch data
     const res = await fetch(`/api/measurements?${q}`);
     const payload = await res.json();
 
@@ -50,12 +60,12 @@ async function loadAll() {
       return;
     }
 
-    const rows = payload.data; 
+    const rows = payload.data; // backend returns { data: [...] }
 
     const labels = rows.map(d => new Date(d.timestamp).toLocaleDateString());
     const values = rows.map(d => d[field]);
 
-    // draw chart
+    // 2) draw chart
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(document.getElementById("chart"), {
@@ -63,18 +73,26 @@ async function loadAll() {
       data: {
         labels,
         datasets: [{
-          label: field,
+          label: `${meta.label} (${meta.unit})`,
           data: values,
           borderWidth: 2
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: meta.unit ? meta.unit : "Value"
+            }
+          }
+        }
       }
     });
 
-    // fetch metrics
+    // 3) fetch metrics
     const mres = await fetch(`/api/measurements/metrics?${q}`);
     const metrics = await mres.json();
 
@@ -85,11 +103,12 @@ async function loadAll() {
     }
 
     document.getElementById("metricsContent").innerHTML = `
+      <p><b>Field:</b> ${meta.label} ${meta.unit ? `(${meta.unit})` : ""}</p>
       <p><b>Count:</b> ${metrics.count}</p>
-      <p><b>Average:</b> ${Number(metrics.average).toFixed(2)}</p>
-      <p><b>Min:</b> ${metrics.min}</p>
-      <p><b>Max:</b> ${metrics.max}</p>
-      <p><b>Std Dev:</b> ${Number(metrics.stdDev).toFixed(2)}</p>
+      <p><b>Average:</b> ${Number(metrics.average).toFixed(2)} ${meta.unit}</p>
+      <p><b>Min:</b> ${metrics.min} ${meta.unit}</p>
+      <p><b>Max:</b> ${metrics.max} ${meta.unit}</p>
+      <p><b>Std Dev:</b> ${Number(metrics.stdDev).toFixed(2)} ${meta.unit}</p>
     `;
   } catch (e) {
     showError("Unexpected error. Check console + server terminal.");
