@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
-const Measurement = require("./models/Measurement");
+const Measurement = require("./models/measurement");
 
 function clamp(x, min, max) {
   return Math.max(min, Math.min(max, x));
